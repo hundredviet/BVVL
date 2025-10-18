@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>连字成句游戏</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+        
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+        }
+        
+        .score, .level {
+            font-size: 18px;
+            color: #34495e;
+        }
+        
+        .sentence-area {
+            background-color: #f1f8ff;
+            border: 2px dashed #3498db;
+            border-radius: 10px;
+            padding: 20px;
+            min-height: 80px;
+            margin-bottom: 25px;
+            font-size: 22px;
+            color: #2c3e50;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .card-area {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 25px;
+        }
+        
+        .card {
+            background-color: #3498db;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            user-select: none;
+        }
+        
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+            background-color: #2980b9;
+        }
+        
+        .card.selected {
+            background-color: #2ecc71;
+            transform: scale(0.95);
+        }
+        
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+        }
+        
+        #check-btn {
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        #check-btn:hover {
+            background-color: #27ae60;
+        }
+        
+        #reset-btn {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        #reset-btn:hover {
+            background-color: #c0392b;
+        }
+        
+        #next-btn {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        #next-btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 18px;
+            display: none;
+        }
+        
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .hint {
+            margin-top: 15px;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>连字成句游戏</h1>
+        
+        <div class="game-info">
+            <div class="score">得分: <span id="score">0</span></div>
+            <div class="level">关卡: <span id="level">1</span>/8</div>
+        </div>
+        
+        <div class="sentence-area" id="sentence-area">
+            请点击下方汉字卡片组成句子
+        </div>
+        
+        <div class="card-area" id="card-area">
+            <!-- 卡片将通过JavaScript动态生成 -->
+        </div>
+        
+        <div class="buttons">
+            <button id="check-btn">检查答案</button>
+            <button id="reset-btn">重新开始</button>
+            <button id="next-btn" style="display:none;">下一关</button>
+        </div>
+        
+        <div class="message" id="message"></div>
+        
+        <div class="hint">
+            提示：按照正确的语序点击汉字卡片组成完整的句子
+        </div>
+    </div>
+
+    <script>
+        // 游戏数据
+        const gameData = [
+            {
+                cards: ["你", "叫", "什", "么", "名", "字"],
+                answer: "你叫什么名字"
+            },
+            {
+                cards: ["了", "他", "看完", "就", "去吃饭", "电影"],
+                answer: "他看完电影就去吃饭了"
+            },
+            {
+                cards: ["我", "图书馆", "在", "学习"],
+                answer: "我在图书馆学习"
+            },
+            {
+                cards: ["好看", "没有", "那件", "那么", "这件", "衣服"],
+                answer: "这件衣服没有那件那么好看"
+            },
+            {
+                cards: ["学过了", "课文", "这个", "不是", "我们", "吗？"],
+                answer: "这个课文我们不是学过了吗？"
+            },
+            {
+                cards: ["打个", "你", "别忘了", "回到家", "电话", "给我"],
+                answer: "你回到家别忘了给我打个电话"
+            },
+            {
+                cards: ["？", "了", "起床", "你", "都", "怎么", "还没", "九点"],
+                answer: "都九点了你怎么还没起床？"
+            },
+            {
+                cards: ["学校", "那所", "没有", "这所", "大", "这么"],
+                answer: "那所学校没有这所这么大"
+            }
+        ];
+
+        // 游戏状态
+        let currentLevel = 0;
+        let score = 0;
+        let selectedCards = [];
+        let shuffledCards = [];
+
+        // DOM元素
+        const cardArea = document.getElementById('card-area');
+        const sentenceArea = document.getElementById('sentence-area');
+        const scoreElement = document.getElementById('score');
+        const levelElement = document.getElementById('level');
+        const checkButton = document.getElementById('check-btn');
+        const resetButton = document.getElementById('reset-btn');
+        const nextButton = document.getElementById('next-btn');
+        const messageElement = document.getElementById('message');
+
+        // 初始化游戏
+        function initGame() {
+            // 重置当前关卡状态
+            selectedCards = [];
+            shuffledCards = [...gameData[currentLevel].cards];
+            
+            // 洗牌算法打乱卡片顺序
+            for (let i = shuffledCards.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffledCards[i], shuffledCards[j]] = [shuffledCards[j], shuffledCards[i]];
+            }
+            
+            // 清空卡片区域
+            cardArea.innerHTML = '';
+            
+            // 创建卡片
+            shuffledCards.forEach((card, index) => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card';
+                cardElement.textContent = card;
+                cardElement.dataset.index = index;
+                cardElement.addEventListener('click', () => selectCard(cardElement));
+                cardArea.appendChild(cardElement);
+            });
+            
+            // 更新句子区域
+            sentenceArea.textContent = '请点击下方汉字卡片组成句子';
+            sentenceArea.style.color = '#2c3e50';
+            
+            // 隐藏消息和下一关按钮
+            messageElement.style.display = 'none';
+            nextButton.style.display = 'none';
+            checkButton.style.display = 'inline-block';
+            
+            // 更新关卡显示
+            levelElement.textContent = currentLevel + 1;
+        }
+
+        // 选择卡片
+        function selectCard(cardElement) {
+            const cardIndex = parseInt(cardElement.dataset.index);
+            const cardText = shuffledCards[cardIndex];
+            
+            // 如果卡片已经被选中，则取消选择
+            if (cardElement.classList.contains('selected')) {
+                cardElement.classList.remove('selected');
+                const index = selectedCards.indexOf(cardIndex);
+                if (index > -1) {
+                    selectedCards.splice(index, 1);
+                }
+            } else {
+                // 选择卡片
+                cardElement.classList.add('selected');
+                selectedCards.push(cardIndex);
+            }
+            
+            // 更新句子区域
+            updateSentenceArea();
+        }
+
+        // 更新句子区域
+        function updateSentenceArea() {
+            if (selectedCards.length === 0) {
+                sentenceArea.textContent = '请点击下方汉字卡片组成句子';
+                sentenceArea.style.color = '#2c3e50';
+            } else {
+                let sentence = '';
+                selectedCards.forEach(index => {
+                    sentence += shuffledCards[index] + ' ';
+                });
+                sentenceArea.textContent = sentence.trim();
+                sentenceArea.style.color = '#2c3e50';
+            }
+        }
+
+        // 检查答案
+        function checkAnswer() {
+            let userAnswer = '';
+            selectedCards.forEach(index => {
+                userAnswer += shuffledCards[index];
+            });
+            
+            const correctAnswer = gameData[currentLevel].answer;
+            
+            if (userAnswer === correctAnswer) {
+                // 答案正确
+                score += 10;
+                scoreElement.textContent = score;
+                
+                messageElement.textContent = '恭喜！答案正确！';
+                messageElement.className = 'message success';
+                messageElement.style.display = 'block';
+                
+                checkButton.style.display = 'none';
+                nextButton.style.display = 'inline-block';
+                
+                // 标记正确卡片
+                document.querySelectorAll('.card').forEach(card => {
+                    card.classList.add('selected');
+                    card.style.backgroundColor = '#2ecc71';
+                });
+            } else {
+                // 答案错误
+                messageElement.textContent = '答案不正确，请再试一次！';
+                messageElement.className = 'message error';
+                messageArea.style.display = 'block';
+                
+                // 显示正确答案
+                setTimeout(() => {
+                    sentenceArea.innerHTML = `正确答案: <span style="color:#2ecc71">${correctAnswer}</span>`;
+                }, 1500);
+            }
+        }
+
+        // 重置当前关卡
+        function resetLevel() {
+            initGame();
+        }
+
+        // 进入下一关
+        function nextLevel() {
+            if (currentLevel < gameData.length - 1) {
+                currentLevel++;
+                initGame();
+            } else {
+                // 游戏通关
+                messageElement.textContent = `恭喜你！你已通关所有关卡！最终得分: ${score}`;
+                messageElement.className = 'message success';
+                messageElement.style.display = 'block';
+                
+                checkButton.style.display = 'none';
+                resetButton.textContent = '重新开始游戏';
+                nextButton.style.display = 'none';
+                
+                currentLevel = 0;
+                score = 0;
+                scoreElement.textContent = score;
+            }
+        }
+
+        // 事件监听
+        checkButton.addEventListener('click', checkAnswer);
+        resetButton.addEventListener('click', resetLevel);
+        nextButton.addEventListener('click', nextLevel);
+
+        // 启动游戏
+        initGame();
+    </script>
+</body>
+</html>
